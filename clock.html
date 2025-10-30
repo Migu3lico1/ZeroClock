@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup Clock</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: black;
+      color: white;
+    }
+
+    video#background-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
+    }
+
+    .clock-container {
+      text-align: center;
+      user-select: none;
+    }
+
+    .time {
+      font-size: 10vw;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .date {
+      font-size: 3vw;
+      opacity: 0.8;
+      transition: all 0.3s ease;
+    }
+
+    .controls {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .controls button {
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(5px);
+    }
+
+    .controls button:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+
+    #settings-panel {
+      position: fixed;
+      top: 80px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.65);
+      padding: 15px;
+      border-radius: 12px;
+      color: white;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      backdrop-filter: blur(6px);
+      min-width: 230px;
+    }
+
+    label {
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    input[type="file"],
+    select,
+    input[type="color"],
+    input[type="range"],
+    input[type="checkbox"] {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 5px;
+    }
+
+    input[type="range"] {
+      width: 100px;
+    }
+  </style>
+</head>
+<body>
+  <video id="background-video" autoplay muted loop></video>
+
+  <div class="controls">
+    <button id="btn-settings">⚙️ Settings</button>
+    <button id="btn-fullscreen">⛶ Fullscreen</button>
+  </div>
+
+  <div id="settings-panel">
+    <label>Background video: <input type="file" id="video-input" accept="video/mp4"></label>
+    <label>Time format:
+      <select id="format-select">
+        <option value="24">24-hour</option>
+        <option value="12">12-hour</option>
+      </select>
+    </label>
+    <label>Show date: <input type="checkbox" id="show-date" checked></label>
+    <label>Text color: <input type="color" id="text-color" value="#ffffff"></label>
+    <label>Font:
+      <select id="font-select">
+        <option value="Poppins">Poppins</option>
+        <option value="Roboto Mono">Roboto Mono</option>
+        <option value="Orbitron">Orbitron</option>
+      </select>
+    </label>
+    <label>Video volume: <input type="range" id="video-volume" min="0" max="1" step="0.01" value="0"></label>
+    <label>Text glow: <input type="checkbox" id="text-glow"></label>
+    <label>Text size: <input type="range" id="text-size" min="4" max="20" step="1" value="10"></label>
+    <button id="save-settings">💾 Save Settings</button>
+  </div>
+
+  <div class="clock-container">
+    <div class="time" id="time"></div>
+    <div class="date" id="date"></div>
+  </div>
+
+  <script>
+    const timeEl = document.getElementById("time");
+    const dateEl = document.getElementById("date");
+    const videoEl = document.getElementById("background-video");
+
+    const videoInput = document.getElementById("video-input");
+    const formatSelect = document.getElementById("format-select");
+    const showDate = document.getElementById("show-date");
+    const textColor = document.getElementById("text-color");
+    const fontSelect = document.getElementById("font-select");
+    const textGlow = document.getElementById("text-glow");
+    const textSize = document.getElementById("text-size");
+    const videoVolume = document.getElementById("video-volume");
+
+    const settingsBtn = document.getElementById("btn-settings");
+    const fullscreenBtn = document.getElementById("btn-fullscreen");
+    const settingsPanel = document.getElementById("settings-panel");
+    const controls = document.querySelector(".controls");
+    const saveBtn = document.getElementById("save-settings");
+
+    function updateClock() {
+      const now = new Date();
+      let hours = now.getHours();
+      const minutes = now.getMinutes().toString().padStart(2, "0");
+      const seconds = now.getSeconds().toString().padStart(2, "0");
+      const format = localStorage.getItem("hourFormat") || "24";
+      let ampm = "";
+
+      if (format === "12") {
+        ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12 || 12;
+      }
+
+      timeEl.textContent = `${hours.toString().padStart(2, "0")}:${minutes}:${seconds} ${ampm}`;
+      const dateStr = now.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+      dateEl.textContent = dateStr;
+      dateEl.style.display = showDate.checked ? "block" : "none";
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function applyStyles() {
+      timeEl.style.color = textColor.value;
+      dateEl.style.color = textColor.value;
+      timeEl.style.fontFamily = fontSelect.value;
+      dateEl.style.fontFamily = fontSelect.value;
+      timeEl.style.fontSize = textSize.value + "vw";
+      timeEl.style.textShadow = textGlow.checked ? "0 0 20px " + textColor.value : "none";
+    }
+
+    function loadSettings() {
+      const settings = JSON.parse(localStorage.getItem("clockSettings")) || {};
+      if (settings.video) videoEl.src = settings.video;
+      if (settings.format) formatSelect.value = settings.format;
+      if (settings.showDate !== undefined) showDate.checked = settings.showDate;
+      if (settings.textColor) textColor.value = settings.textColor;
+      if (settings.font) fontSelect.value = settings.font;
+      if (settings.textGlow !== undefined) textGlow.checked = settings.textGlow;
+      if (settings.textSize) textSize.value = settings.textSize;
+      if (settings.volume !== undefined) videoVolume.value = settings.volume;
+      videoEl.volume = videoVolume.value;
+      applyStyles();
+    }
+
+    function saveToLocal() {
+      const settings = {
+        video: videoEl.src,
+        format: formatSelect.value,
+        showDate: showDate.checked,
+        textColor: textColor.value,
+        font: fontSelect.value,
+        textGlow: textGlow.checked,
+        textSize: textSize.value,
+        volume: videoVolume.value
+      };
+      localStorage.setItem("clockSettings", JSON.stringify(settings));
+    }
+
+    videoInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const url = URL.createObjectURL(file);
+        videoEl.src = url;
+        saveToLocal();
+      }
+    });
+
+    [formatSelect, showDate, textColor, fontSelect, textGlow, textSize, videoVolume].forEach(el => {
+      el.addEventListener("input", () => {
+        applyStyles();
+        videoEl.volume = videoVolume.value;
+        saveToLocal();
+      });
+    });
+
+    settingsBtn.addEventListener("click", () => {
+      settingsPanel.style.display = settingsPanel.style.display === "flex" ? "none" : "flex";
+      settingsPanel.style.flexDirection = "column";
+    });
+
+    fullscreenBtn.addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        controls.style.display = "none";
+        settingsPanel.style.display = "none";
+      } else {
+        document.exitFullscreen();
+        controls.style.display = "flex";
+      }
+    });
+
+    saveBtn.addEventListener("click", () => {
+      const settingsData = localStorage.getItem("clockSettings");
+      const blob = new Blob([settingsData], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "settings.json";
+      link.click();
+    });
+
+    loadSettings();
+  </script>
+</body>
+</html>
